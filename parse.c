@@ -18,6 +18,10 @@ unsigned int parse_opcode(char *token) {
     return OP_NOT;
   } else if (startsWith("BR", token)) {
     return OP_BR;
+  } else if (startsWith("JMP", token) || startsWith("RET", token)) {
+    return OP_JMP;
+  } else if (startsWith("JSR", token) || startsWith("JSRR", token)) {
+    return OP_JSR;
   } else if (strcmp("LD", token) == 0) {
     return OP_LD;
   } else if (strcmp("LDI", token) == 0) {
@@ -65,6 +69,14 @@ unsigned int parse_imm8(char *token) {
 unsigned int parse_imm9(char *token) {
   unsigned int x = atoi(token);
   if (x >= 512) {
+    return -1;
+  }
+  return x;
+}
+
+unsigned int parse_imm11(char *token) {
+  unsigned int x = atoi(token);
+  if (x >= 4096) {
     return -1;
   }
   return x;
@@ -169,6 +181,44 @@ uint16_t parse_not() {
   instr |= (dr << 6);
 
   instr |= 0x1F;
+  return instr;
+}
+
+
+uint16_t parse_jump() {
+  uint16_t instr = 0;
+  instr |= (OP_JMP << 12);
+  char space[2] = " ";
+
+  char *token;// = strtok(line, space);
+
+  token = strtok(NULL, space);
+
+  if(token != NULL ){
+    unsigned int baser = parse_reg(token);
+    instr |= (baser << 6);
+  } else {
+    instr |= (0x7 << 6);
+  }
+
+  return instr;
+}
+
+uint16_t parse_jsr(char *token) {
+  uint16_t instr = 0;
+  instr |= (OP_JSR << 12);
+  char space[2] = " ";
+
+  if(token[3]=='R'){
+    token = strtok(NULL, space);
+    unsigned int baser = parse_reg(token);
+    instr |= (baser << 6);
+  } else {
+    instr |= 0x1 << 11;
+    token = strtok(NULL, space);
+    unsigned int imm11 = parse_imm11(token);
+    instr |= imm11;
+  }
   return instr;
 }
 
@@ -343,9 +393,9 @@ uint16_t parse_line(char *line) {
     case OP_BR:
       return parse_branch(token);
     case OP_JMP:
-      // return parse_jump();
+      return parse_jump();
     case OP_JSR:
-      // return parse_jsr();
+      return parse_jsr(token);
     case OP_LD:
       return parse_ld();
     case OP_LDI:
