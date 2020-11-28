@@ -12,7 +12,7 @@ void print_binary(int x) {
 }
 
 int main() {
-  char str[50] = "BRn 256";
+  char str[50] = "LDI R0 1023";
   int x = parse_line(str);
   print_binary(x);
   return 0;

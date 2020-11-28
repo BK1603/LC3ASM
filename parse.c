@@ -19,6 +19,12 @@ unsigned int parse_opcode(char *token) {
     return OP_NOT;
   } else if (startsWith("BR", token)) {
     return OP_BR;
+  } else if (strcmp("LD", token) == 0) {
+    return OP_LD;
+  } else if (strcmp("LDI", token) == 0) {
+    return OP_LDI;
+  } else if (strcmp("LDR", token) == 0) {
+    return OP_LDR;
   }
   return -1;
 }
@@ -40,7 +46,6 @@ unsigned int parse_imm9(char *token) {
 }
 
 unsigned int parse_reg(const char *reg) {
-  return 7;
   // assuming got a valid register
   switch(reg[1]) {
     case '0':
@@ -160,6 +165,47 @@ uint16_t parse_branch(char *token) {
   return instr;
 }
 
+uint16_t parse_ld() {
+  unsigned int instr = 0;
+  char space[2] = " ";
+  instr |= (OP_LD << 12);
+
+  char *token = strtok(NULL, space);
+  unsigned int dr = parse_reg(token);
+  instr |= (dr << 9);
+
+  token = strtok(NULL, space);
+  unsigned int imm9 = parse_imm9(token);
+  instr |= imm9;
+
+  return instr;
+}
+
+uint16_t parse_ldi() {
+  uint16_t instr = 0;
+  char space[2] = " ";
+  instr |= (OP_LDI << 12);
+
+  char *token = strtok(NULL, space);
+  unsigned int dr = parse_reg(token);
+  instr |= (dr << 9);
+
+  token = strtok(NULL, space);
+  unsigned int imm9 = parse_imm9(token);
+  instr |= imm9;
+
+  return instr;
+}
+
+uint16_t parse_ldr() {
+  uint16_t instr = 0;
+  char space[2] = " ";
+  instr |= (OP_LDR << 12);
+
+  char *token = strtok(NULL, space);
+  unsigned int dr = parse_reg(token);
+}
+
 uint16_t parse_line(char *line) {
   unsigned int opcode;
   unsigned int instr;
@@ -187,9 +233,9 @@ uint16_t parse_line(char *line) {
     case OP_JSR:
       // return parse_jsr(token);
     case OP_LD:
-      // return parse_load(token);
+      return parse_ld();
     case OP_LDI:
-      // return parse_ldi(token);
+      return parse_ldi();
     case OP_LDR:
       // return parse_ldr(token);
     case OP_LEA:
