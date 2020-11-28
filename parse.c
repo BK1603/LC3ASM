@@ -3,10 +3,22 @@
 #include <stdio.h>
 #include <string.h>
 
+int startsWith(const char *pre, const char *str) {
+    size_t lenpre = strlen(pre),
+           lenstr = strlen(str);
+    return lenstr < lenpre ? 0 : memcmp(pre, str, lenpre) == 0;
+}
+
 unsigned int parse_opcode(char *token) {
   unsigned int op;
-  if (strcmp(token, "ADD\0") == 0) {
+  if (strcmp(token, "ADD") == 0) {
     return OP_ADD;
+  } else if (strcmp(token, "AND") == 0) {
+    return OP_AND;
+  } else if (strcmp(token, "NOT") == 0) {
+    return OP_NOT;
+  } else if (startsWith("BR", token)) {
+    return OP_BR;
   }
   return -1;
 }
@@ -14,6 +26,14 @@ unsigned int parse_opcode(char *token) {
 unsigned int parse_imm5(char *token) {
   unsigned int x = atoi(token);
   if (x >= 64) {
+    return -1;
+  }
+  return x;
+}
+
+unsigned int parse_imm9(char *token) {
+  unsigned int x = atoi(token);
+  if (x >= 1024) {
     return -1;
   }
   return x;
@@ -80,6 +100,66 @@ uint16_t parse_add() {
   return instr;
 }
 
+uint16_t parse_and() {
+  uint16_t instr = 0;
+  instr |= (OP_AND << 12);
+  char space[2] = " ";
+
+  char *token = strtok(NULL, space);
+  unsigned int dr = parse_reg(token);
+  instr |= (dr << 9);
+
+  token = strtok(NULL, space);
+  unsigned int sr1 = parse_reg(token);
+  instr |= (sr1 << 6);
+
+  token = strtok(NULL, space);
+  if (token[1] == 'R') {
+    unsigned int sr2 = parse_reg(token);
+    instr |= sr2;
+  } else {
+    unsigned int imm5 = parse_imm5(token);
+    instr |= (1 << 5);
+    instr |= imm5;
+  }
+
+  return instr;
+}
+
+// 1001 DR SR 11111
+uint16_t parse_not() {
+  uint16_t instr = 0;
+  instr |= (OP_NOT << 12);
+  char space[2] = " ";
+
+  char *token = strtok(NULL, space);
+  unsigned int dr = parse_reg(token);
+  instr |= (dr << 9);
+
+  token = strtok(NULL, space);
+  unsigned int sr = parse_reg(token);
+  instr |= (dr << 6);
+
+  instr |= 0x1F;
+  return instr;
+}
+
+uint16_t parse_branch(char *token) {
+  uint16_t instr = 0;
+  char space[2] = " ";
+  instr |= (OP_BR << 12);
+
+  unsigned int flag;
+  flag = ((token[2] == 'n') << 2) | ((token[2] == 'z') << 1) | (token[2] == 'p');
+  instr |= (flag << 9);
+
+  token = strtok(NULL, space);
+  unsigned int imm9 = parse_imm9(token);
+  instr |= imm9;
+
+  return instr;
+}
+
 uint16_t parse_line(char *line) {
   unsigned int opcode;
   unsigned int instr;
@@ -92,17 +172,16 @@ uint16_t parse_line(char *line) {
   printf("%s\n", token);
 
   // parse each token
-  // opcode = parse_opcode(token);
-  opcode = OP_ADD;
+  opcode = parse_opcode(token);
   switch (opcode) {
     case OP_ADD:
       return parse_add();
     case OP_AND:
-      // return parse_and(token);
+      return parse_and();
     case OP_NOT:
-      // return parse_not(token);
+      return parse_not();
     case OP_BR:
-      // return parse_branch(token);
+      return parse_branch(token);
     case OP_JMP:
       // return parse_jump(token);
     case OP_JSR:
