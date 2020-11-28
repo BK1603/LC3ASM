@@ -49,6 +49,14 @@ unsigned int parse_imm9(char *token) {
   return x;
 }
 
+unsigned int parse_imm11(char *token) {
+  unsigned int x = atoi(token);
+  if (x >= 4096) {
+    return -1;
+  }
+  return x;
+}
+
 unsigned int parse_reg(const char *reg) {
   // assuming got a valid register
   switch(reg[1]) {
@@ -173,6 +181,23 @@ uint16_t parse_jump() {
   return instr;
 }
 
+uint16_t parse_jsr(char *token) {
+  uint16_t instr = 0;
+  instr |= (OP_JSR << 12);
+  char space[2] = " ";
+
+  if(token[3]=='R'){
+    token = strtok(NULL, space);
+    unsigned int baser = parse_reg(token);
+    instr |= (baser << 6);
+  } else {
+    instr |= 0x1 << 11;
+    token = strtok(NULL, space);
+    unsigned int imm11 = parse_imm11(token);
+    instr |= imm11;
+  }
+  return instr;
+}
 
 uint16_t parse_branch(char *token) {
   uint16_t instr = 0;
@@ -256,7 +281,7 @@ uint16_t parse_line(char *line) {
     case OP_JMP:
       return parse_jump();
     case OP_JSR:
-      // return parse_jsr();
+      return parse_jsr(token);
     case OP_LD:
       return parse_ld();
     case OP_LDI:
