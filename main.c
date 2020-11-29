@@ -1,9 +1,18 @@
 // Hopefully we will make an assembler today. That is able to assemble hello world
 // in assembly. In the ideal case we will have two passes ready. Thank you. xD
 
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "parse.h"
+
+void print_binary(int x) {
+  for (int i = 0; i < 16; i++) {
+    printf("%d", x & 0x1);
+    x >>= 1;
+  }
+  printf("\n");
+}
 
 // MOV RAX, RDX
 // ADD RAX, 8
@@ -54,28 +63,30 @@ int main(int argc, char **argv) {
 
   // Read the file.
   // TODO: make function read_file
-  if (!check_file((const char *)argv[1])) {
-    printf("ERROR: Could not read assembly file.\n");
-    return 1;
-  }
+  // if (!check_file((const char *)argv[1])) {
+  //   printf("ERROR: Could not read assembly file.\n");
+  //   return 1;
+  // }
 
   FILE *ifp = fopen((const char *)argv[1], "r"); //lc3acm file.asm
 
   // TODO: Generate output file name
-  char *output_file = gen_output_file((const char *)argv[1]); //file.asm -> file.out
-  FILE *ofp = fopen((const char *)output_file, "wb");
+  // char *output_file = gen_output_file((const char *)argv[1]); //file.asm -> file.out
+  FILE *ofp = fopen("file.out", "wb");
 
-  unsigned int len = 0;
+  size_t len = 0;
   char *current_line;
-  while((read  = getline(&current_line, &len, ifp))) {
+  while(getline(&current_line, &len, ifp)>=0) {
     uint16_t instr;
+    printf("\n parsing %s",current_line);
 
-    // TODO: create parse_line
     instr = parse_line(current_line); // main function. character line -> binary code.
-
+    print_binary(instr);
     // write to ofp
-    fwrite(instr, sizeof(instr), 1, ofp);
+    fwrite((const void*) & instr, sizeof(instr), 1, ofp);
   }
+  fclose(ofp);
+  fclose(ifp);
   // First pass.
   // 1. Parse labels.
   // 2. Store in symbol table.
